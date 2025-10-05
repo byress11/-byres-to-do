@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TaskMaster Pro - Görev ve Pomodoro Yöneticisi</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Font Awesome for professional icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+</head>
+<body>
+    <!-- Sync Status Indicator -->
+    <div class="sync-indicator" id="syncIndicator">
+        <i class="fas fa-sync-alt"></i>
+        <span id="syncStatus">Senkronize ediliyor...</span>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="login-modal" id="loginModal">
+        <div class="login-content">
+            <h2><i class="fas fa-cloud"></i> Bulut Senkronizasyon</h2>
+            <p>Verilerinizi tüm cihazlarınızda senkronize edin</p>
+
+            <div class="login-options">
+                <button class="login-btn anonymous" id="anonymousLoginBtn">
+                    <i class="fas fa-user-secret"></i>
+                    <span>Anonim Giriş</span>
+                </button>
+
+                <div class="divider">veya</div>
+
+                <div class="email-login">
+                    <input type="email" id="emailInput" placeholder="E-posta adresiniz" class="login-input" autocomplete="email">
+                    <input type="password" id="passwordInput" placeholder="Şifre (min. 6 karakter)" class="login-input" autocomplete="current-password">
+                    <button class="login-btn email" id="emailLoginBtn">
+                        <i class="fas fa-envelope"></i>
+                        <span>E-posta ile Giriş/Kayıt</span>
+                    </button>
+                    <p class="login-hint">
+                        <i class="fas fa-info-circle"></i>
+                        İlk kez giriş yapıyorsanız otomatik hesap oluşturulur
+                    </p>
+                </div>
+            </div>
+
+            <button class="skip-btn" id="skipLoginBtn">
+                <i class="fas fa-times"></i> Şimdilik Atla (Sadece Yerel)
+            </button>
+        </div>
+    </div>
+    <div class="widget-container" id="widgetContainer">
+        <!-- Resize Handles -->
+        <div class="resize-handle resize-top" data-direction="top"></div>
+        <div class="resize-handle resize-right" data-direction="right"></div>
+        <div class="resize-handle resize-bottom" data-direction="bottom"></div>
+        <div class="resize-handle resize-left" data-direction="left"></div>
+        <div class="resize-handle resize-top-left" data-direction="top-left"></div>
+        <div class="resize-handle resize-top-right" data-direction="top-right"></div>
+        <div class="resize-handle resize-bottom-left" data-direction="bottom-left"></div>
+        <div class="resize-handle resize-bottom-right" data-direction="bottom-right"></div>
+
+        <!-- Header -->
+        <div class="widget-header" id="widgetHeader">
+            <div class="widget-title">
+                <i class="fas fa-tasks widget-icon"></i>
+                <span class="title-text">TaskMaster Pro</span>
+            </div>
+            <div class="widget-controls">
+                <button class="control-btn" id="userAccountBtn" title="Hesap" style="display: none;">
+                    <i class="fas fa-user"></i>
+                </button>
+                <button class="control-btn" id="settingsBtn" title="Ayarlar">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <button class="control-btn" id="alwaysOnTopBtn" title="Her Zaman Üstte">
+                    <i class="fas fa-thumbtack"></i>
+                </button>
+                <button class="control-btn" id="themeBtn" title="Tema Değiştir">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="control-btn" id="minimizeBtn" title="Küçült">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="control-btn close-btn" id="closeBtn" title="Kapat">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="widget-nav">
+            <button class="nav-btn active" data-tab="todo">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Görevler</span>
+            </button>
+            <button class="nav-btn" data-tab="pomodoro">
+                <i class="fas fa-clock"></i>
+                <span>Pomodoro</span>
+            </button>
+            <button class="nav-btn" data-tab="reminders">
+                <i class="fas fa-bell"></i>
+                <span>Hatırlatma</span>
+            </button>
+            <button class="nav-btn" data-tab="stats">
+                <i class="fas fa-chart-line"></i>
+                <span>İstatistik</span>
+            </button>
+        </div>
+
+        <!-- Todo Tab -->
+        <div class="tab-content active" id="todoTab">
+            <div class="todo-toolbar">
+                <div class="filter-group">
+                    <button class="filter-btn active" data-filter="all">
+                        <i class="fas fa-list"></i> Tümü
+                    </button>
+                    <button class="filter-btn" data-filter="active">
+                        <i class="fas fa-spinner"></i> Aktif
+                    </button>
+                    <button class="filter-btn" data-filter="completed">
+                        <i class="fas fa-check-circle"></i> Tamamlanan
+                    </button>
+                </div>
+                <button class="category-toggle-btn" id="categoryToggleBtn" title="Görev Ekleme ve Kategorileri Göster/Gizle">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+
+            <div class="collapsible-section" id="collapsibleSection">
+                <div class="input-group">
+                    <input type="text" id="todoInput" placeholder="Yeni görev ekle..." class="task-input">
+                    <select id="todoCategory" class="category-select">
+                        <option value="personal">🏠 Kişisel</option>
+                        <option value="work">💼 İş</option>
+                        <option value="shopping">🛒 Alışveriş</option>
+                        <option value="health">💪 Sağlık</option>
+                        <option value="study">📚 Eğitim</option>
+                        <option value="other">📌 Diğer</option>
+                    </select>
+                    <select id="todoPriority" class="priority-select">
+                        <option value="low">Düşük</option>
+                        <option value="medium" selected>Orta</option>
+                        <option value="high">Yüksek</option>
+                    </select>
+                    <button id="addTodoBtn" class="add-btn">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+
+                <div class="category-filters" id="categoryFilters">
+                    <button class="category-filter-btn active" data-category="all">
+                        <i class="fas fa-th"></i> Tümü
+                    </button>
+                    <button class="category-filter-btn" data-category="personal">🏠 Kişisel</button>
+                    <button class="category-filter-btn" data-category="work">💼 İş</button>
+                    <button class="category-filter-btn" data-category="shopping">🛒 Alışveriş</button>
+                    <button class="category-filter-btn" data-category="health">💪 Sağlık</button>
+                    <button class="category-filter-btn" data-category="study">📚 Eğitim</button>
+                    <button class="category-filter-btn" data-category="other">📌 Diğer</button>
+                </div>
+            </div>
+
+            <!-- List View -->
+            <div class="todo-list" id="todoList"></div>
+
+            <div class="todo-stats">
+                <span id="todoCount">
+                    <i class="fas fa-tasks"></i> 0 görev
+                </span>
+                <div class="stats-actions">
+                    <button id="exportDataBtn" class="action-btn" title="Dışa Aktar">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button id="importDataBtn" class="action-btn" title="İçe Aktar">
+                        <i class="fas fa-upload"></i>
+                    </button>
+                    <button id="clearCompleted" class="clear-btn">
+                        <i class="fas fa-trash-alt"></i> Temizle
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pomodoro Tab -->
+        <div class="tab-content" id="pomodoroTab">
+            <div class="pomodoro-container">
+                <div class="timer-display">
+                    <div class="timer-circle">
+                        <svg class="timer-svg" viewBox="0 0 200 200">
+                            <circle cx="100" cy="100" r="90" class="timer-bg"></circle>
+                            <circle cx="100" cy="100" r="90" class="timer-progress" id="timerProgress"></circle>
+                        </svg>
+                        <div class="timer-text">
+                            <div class="timer-time" id="timerTime">25:00</div>
+                            <div class="timer-session" id="timerSession">Çalışma Zamanı</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timer-controls">
+                    <button id="startPomodoroBtn" class="pomodoro-btn start">
+                        <i class="fas fa-play"></i> Başlat
+                    </button>
+                    <button id="pausePomodoroBtn" class="pomodoro-btn pause" style="display:none;">
+                        <i class="fas fa-pause"></i> Duraklat
+                    </button>
+                    <button id="resetPomodoroBtn" class="pomodoro-btn reset">
+                        <i class="fas fa-redo"></i> Sıfırla
+                    </button>
+                </div>
+
+                <div class="pomodoro-settings">
+                    <div class="setting-item">
+                        <label><i class="fas fa-briefcase"></i> Çalışma Süresi:</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="workDuration" value="25" min="1" max="60">
+                            <span>dakika</span>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label><i class="fas fa-coffee"></i> Kısa Mola:</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="shortBreak" value="5" min="1" max="30">
+                            <span>dakika</span>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label><i class="fas fa-couch"></i> Uzun Mola:</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="longBreak" value="15" min="1" max="60">
+                            <span>dakika</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pomodoro-info">
+                    <div class="info-item">
+                        <i class="fas fa-check-double"></i>
+                        <div class="info-content">
+                            <span class="info-label">Tamamlanan</span>
+                            <span class="info-value" id="completedPomodoros">0</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-hourglass-half"></i>
+                        <div class="info-content">
+                            <span class="info-label">Toplam Süre</span>
+                            <span class="info-value" id="totalTime">0 dk</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reminders Tab -->
+        <div class="tab-content" id="remindersTab">
+            <div class="input-group">
+                <input type="text" id="reminderInput" placeholder="Hatırlatma ekle..." class="task-input">
+            </div>
+
+            <div class="reminder-time-group">
+                <div class="time-input-wrapper">
+                    <i class="fas fa-calendar-alt"></i>
+                    <input type="datetime-local" id="reminderTime" class="time-input">
+                </div>
+
+                <label class="checkbox-label">
+                    <input type="checkbox" id="reminderRepeat">
+                    <span class="checkbox-custom"></span>
+                    <span><i class="fas fa-repeat"></i> Tekrarla</span>
+                </label>
+
+                <select id="reminderRepeatInterval" class="repeat-select" disabled>
+                    <option value="daily">Günlük</option>
+                    <option value="weekly">Haftalık</option>
+                    <option value="monthly">Aylık</option>
+                </select>
+            </div>
+
+            <button id="addReminderBtn" class="add-reminder-btn">
+                <i class="fas fa-bell-plus"></i> Hatırlatma Ekle
+            </button>
+
+            <div class="reminder-list" id="reminderList"></div>
+        </div>
+
+        <!-- Stats Tab -->
+        <div class="tab-content" id="statsTab">
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-label">Toplam Görev</div>
+                        <div class="stat-value" id="totalTasks">0</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-label">Tamamlanan</div>
+                        <div class="stat-value" id="completedTasks">0</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon warning">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-label">Pomodoro</div>
+                        <div class="stat-value" id="totalPomodoros">0</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon info">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-label">Toplam Dakika</div>
+                        <div class="stat-value" id="totalMinutes">0</div>
+                    </div>
+                </div>
+
+                <div class="stat-card full-width">
+                    <div class="productivity-header">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Verimlilik Oranı</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="productivityProgress"></div>
+                    </div>
+                    <div class="stat-value large" id="productivityPercent">0%</div>
+                </div>
+
+                <button id="resetStatsBtn" class="reset-stats-btn">
+                    <i class="fas fa-trash-restore"></i> İstatistikleri Sıfırla
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Account Panel -->
+    <div class="account-panel" id="accountPanel">
+        <div class="account-header">
+            <h3><i class="fas fa-user"></i> Hesap Bilgileri</h3>
+            <button class="account-close" id="accountClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="account-content">
+            <div class="account-info">
+                <div class="account-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="account-details">
+                    <div class="account-label">Kullanıcı</div>
+                    <div class="account-email" id="accountEmail">-</div>
+                    <div class="account-type" id="accountType">
+                        <i class="fas fa-shield-alt"></i> <span id="accountTypeText">Yerel Hesap</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="account-stats-mini">
+                <div class="stat-mini">
+                    <i class="fas fa-sync"></i>
+                    <span id="syncStatusText">Senkronize Değil</span>
+                </div>
+            </div>
+
+            <div class="account-actions">
+                <button class="account-btn" id="loginAgainBtn">
+                    <i class="fas fa-sign-in-alt"></i> Giriş Yap / Hesap Değiştir
+                </button>
+                <button class="account-btn danger" id="logoutBtn" style="display: none;">
+                    <i class="fas fa-sign-out-alt"></i> Çıkış Yap
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-header">
+            <h3><i class="fas fa-cog"></i> Ayarlar</h3>
+            <button class="settings-close" id="settingsClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="settings-content">
+            <!-- Opacity Control -->
+            <div class="settings-section">
+                <div class="settings-label">
+                    <i class="fas fa-adjust"></i>
+                    <span>Şeffaflık</span>
+                </div>
+                <div class="opacity-control">
+                    <input type="range" id="opacitySlider" min="50" max="100" value="100" class="opacity-slider">
+                    <span class="opacity-value" id="opacityValue">100%</span>
+                </div>
+            </div>
+
+            <!-- Color Palette -->
+            <div class="settings-section">
+                <div class="settings-label">
+                    <i class="fas fa-palette"></i>
+                    <span>Renk Teması</span>
+                </div>
+                <div class="color-palettes">
+                    <button class="palette-btn active" data-palette="indigo" title="İndigo">
+                        <span class="palette-color" style="background: linear-gradient(135deg, #6366f1, #8b5cf6)"></span>
+                    </button>
+                    <button class="palette-btn" data-palette="emerald" title="Zümrüt">
+                        <span class="palette-color" style="background: linear-gradient(135deg, #10b981, #059669)"></span>
+                    </button>
+                    <button class="palette-btn" data-palette="rose" title="Gül">
+                        <span class="palette-color" style="background: linear-gradient(135deg, #f43f5e, #e11d48)"></span>
+                    </button>
+                    <button class="palette-btn" data-palette="amber" title="Kehribar">
+                        <span class="palette-color" style="background: linear-gradient(135deg, #f59e0b, #d97706)"></span>
+                    </button>
+                    <button class="palette-btn" data-palette="sky" title="Gök">
+                        <span class="palette-color" style="background: linear-gradient(135deg, #0ea5e9, #0284c7)"></span>
+                    </button>
+                    <button class="palette-btn" data-palette="purple" title="Mor">
+                        <span class="palette-color" style="background: linear-gradient(135deg, #a855f7, #9333ea)"></span>
+                    </button>
+                    <button class="palette-btn" data-palette="teal" title="Turkuaz">
+                        <span class="palette-color" style="background: linear-gradient(135deg, #14b8a6, #0d9488)"></span>
+                    </button>
+                    <button class="palette-btn" data-palette="crimson" title="Kırmızı">
+                        <span class="palette-color" style="background: linear-gradient(135deg, #dc2626, #b91c1c)"></span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Background Blur -->
+            <div class="settings-section">
+                <div class="settings-label">
+                    <i class="fas fa-blur"></i>
+                    <span>Arka Plan Bulanıklığı</span>
+                </div>
+                <div class="blur-control">
+                    <input type="range" id="blurSlider" min="0" max="20" value="0" class="blur-slider">
+                    <span class="blur-value" id="blurValue">0px</span>
+                </div>
+            </div>
+
+            <!-- Sound Effects -->
+            <div class="settings-section">
+                <div class="settings-label">
+                    <i class="fas fa-volume-up"></i>
+                    <span>Ses Efektleri</span>
+                </div>
+                <label class="settings-checkbox">
+                    <input type="checkbox" id="soundEffects" checked>
+                    <span>Ses efektlerini aç</span>
+                </label>
+            </div>
+
+            <!-- Animations -->
+            <div class="settings-section">
+                <div class="settings-label">
+                    <i class="fas fa-magic"></i>
+                    <span>Animasyonlar</span>
+                </div>
+                <label class="settings-checkbox">
+                    <input type="checkbox" id="animations" checked>
+                    <span>Animasyonları aç</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import File Input (Hidden) -->
+    <input type="file" id="importFileInput" accept=".json" style="display: none;">
+
+    <script src="script.js"></script>
+</body>
+</html>
