@@ -1,0 +1,121 @@
+<!-- Bu dosya, icon-192.png oluşturmak için kullanılacak HTML sayfasıdır -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Icon Generator</title>
+</head>
+<body style="margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #f0f0f0;">
+    <canvas id="canvas" width="192" height="192"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Create gradient background
+        const gradient = ctx.createLinearGradient(0, 0, 192, 192);
+        gradient.addColorStop(0, '#6366f1');
+        gradient.addColorStop(1, '#8b5cf6');
+        
+        // Draw circle
+        ctx.beginPath();
+        ctx.arc(96, 96, 92, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        
+        // Draw checkmark
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 16;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        ctx.beginPath();
+        ctx.moveTo(58, 96);
+        ctx.lineTo(81, 119);
+        ctx.lineTo(134, 66);
+        ctx.stroke();
+        
+        // Draw task lines
+        ctx.lineWidth = 6;
+        ctx.globalAlpha = 0.8;
+        
+        ctx.beginPath();
+        ctx.moveTo(48, 58);
+        ctx.lineTo(77, 58);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(48, 134);
+        ctx.lineTo(67, 134);
+        ctx.stroke();
+        
+        // Download button
+        const btn = document.createElement('button');
+        btn.textContent = 'İkonu İndir (icon-192.png)';
+        btn.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold;';
+        btn.onclick = () => {
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'icon-192.png';
+                a.click();
+            });
+        };
+        document.body.appendChild(btn);
+        
+        // Auto download 512x512 version
+        const canvas512 = document.createElement('canvas');
+        canvas512.width = 512;
+        canvas512.height = 512;
+        const ctx512 = canvas512.getContext('2d');
+        
+        const gradient512 = ctx512.createLinearGradient(0, 0, 512, 512);
+        gradient512.addColorStop(0, '#6366f1');
+        gradient512.addColorStop(1, '#8b5cf6');
+        
+        ctx512.beginPath();
+        ctx512.arc(256, 256, 245, 0, Math.PI * 2);
+        ctx512.fillStyle = gradient512;
+        ctx512.fill();
+        
+        ctx512.strokeStyle = 'white';
+        ctx512.lineWidth = 42;
+        ctx512.lineCap = 'round';
+        ctx512.lineJoin = 'round';
+        
+        ctx512.beginPath();
+        ctx512.moveTo(154, 256);
+        ctx512.lineTo(216, 318);
+        ctx512.lineTo(358, 176);
+        ctx512.stroke();
+        
+        ctx512.lineWidth = 16;
+        ctx512.globalAlpha = 0.8;
+        
+        ctx512.beginPath();
+        ctx512.moveTo(128, 154);
+        ctx512.lineTo(205, 154);
+        ctx512.stroke();
+        
+        ctx512.beginPath();
+        ctx512.moveTo(128, 358);
+        ctx512.lineTo(179, 358);
+        ctx512.stroke();
+        
+        const btn512 = document.createElement('button');
+        btn512.textContent = 'Büyük İkonu İndir (icon-512.png)';
+        btn512.style.cssText = 'position: fixed; top: 70px; left: 50%; transform: translateX(-50%); padding: 12px 24px; background: #8b5cf6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold;';
+        btn512.onclick = () => {
+            canvas512.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'icon-512.png';
+                a.click();
+            });
+        };
+        document.body.appendChild(btn512);
+    </script>
+</body>
+</html>
+
